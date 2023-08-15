@@ -23,10 +23,13 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
 
   List<LatLng> polylineCoordinates = [];
   LocationData? currentLocation;
+  bool isLoading = true;
 
   BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker;
-  BitmapDescriptor destinationIcon = BitmapDescriptor.defaultMarker;
-  BitmapDescriptor currentLocationIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor destinationIcon =
+      BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+  BitmapDescriptor currentLocationIcon =
+      BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
 
   void getCurrentLocation() async {
     Location location = Location();
@@ -34,6 +37,8 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     location.getLocation().then(
       (location) {
         currentLocation = location;
+        isLoading = false;
+        setState(() {});
       },
     );
 
@@ -121,7 +126,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
           style: TextStyle(color: Colors.black, fontSize: 16),
         ),
       ),
-      body: currentLocation == null
+      body: isLoading
           ? const Center(child: Text("Loading"))
           : GoogleMap(
               initialCameraPosition: CameraPosition(
@@ -142,14 +147,16 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                   markerId: const MarkerId("currentLocation"),
                   position: LatLng(
                       currentLocation!.latitude!, currentLocation!.longitude!),
+                  icon: currentLocationIcon,
                 ),
                 Marker(
-                  markerId: MarkerId("source"),
-                  position: startLocation,
-                ),
+                    markerId: MarkerId("source"),
+                    position: startLocation,
+                    icon: sourceIcon),
                 Marker(
                   markerId: MarkerId("destination"),
                   position: deliveryLocation,
+                  icon: destinationIcon,
                 ),
               },
               onMapCreated: (mapController) {
