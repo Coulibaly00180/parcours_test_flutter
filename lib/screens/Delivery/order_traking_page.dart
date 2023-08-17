@@ -7,8 +7,14 @@ import 'package:location/location.dart';
 
 class OrderTrackingPage extends StatefulWidget {
   final Map<String, LatLng> coordinates;
-  const OrderTrackingPage({Key? key, required this.coordinates})
-      : super(key: key);
+  final double distance;
+  final int tempsParcours;
+  const OrderTrackingPage({
+    Key? key,
+    required this.coordinates,
+    required this.distance,
+    required this.tempsParcours,
+  }) : super(key: key);
 
   @override
   State<OrderTrackingPage> createState() => _OrderTrackingPageState();
@@ -128,40 +134,84 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       ),
       body: isLoading
           ? const Center(child: Text("Loading"))
-          : GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(
-                    currentLocation!.latitude!, currentLocation!.longitude!),
-                zoom: 14.5,
-              ),
-              polylines: {
-                Polyline(
-                  polylineId: PolylineId("route"),
-                  points: polylineCoordinates,
-                  color: Colors.red,
-                  width: 6,
+          : Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    children: [
+                      GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: LatLng(currentLocation!.latitude!,
+                              currentLocation!.longitude!),
+                          zoom: 14.5,
+                        ),
+                        polylines: {
+                          Polyline(
+                            polylineId: PolylineId("route"),
+                            points: polylineCoordinates,
+                            color: Colors.red,
+                            width: 6,
+                          ),
+                        },
+                        markers: {
+                          Marker(
+                            markerId: const MarkerId("currentLocation"),
+                            position: LatLng(currentLocation!.latitude!,
+                                currentLocation!.longitude!),
+                            icon: currentLocationIcon,
+                          ),
+                          Marker(
+                              markerId: MarkerId("source"),
+                              position: startLocation,
+                              icon: sourceIcon),
+                          Marker(
+                            markerId: MarkerId("destination"),
+                            position: deliveryLocation,
+                            icon: destinationIcon,
+                          ),
+                        },
+                        onMapCreated: (mapController) {
+                          _controller.complete(mapController);
+                        },
+                      ),
+                      Positioned(
+                        top: MediaQuery.of(context).size.height * 0.1,
+                        left: 16,
+                        right: 16,
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Distance restant à parcourir : km",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              Text(
+                                "Temps restant avant l'arrivé : ",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              // Ajoutez ici un widget pour le chronomètre si nécessaire
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              },
-              markers: {
-                Marker(
-                  markerId: const MarkerId("currentLocation"),
-                  position: LatLng(
-                      currentLocation!.latitude!, currentLocation!.longitude!),
-                  icon: currentLocationIcon,
-                ),
-                Marker(
-                    markerId: MarkerId("source"),
-                    position: startLocation,
-                    icon: sourceIcon),
-                Marker(
-                  markerId: MarkerId("destination"),
-                  position: deliveryLocation,
-                  icon: destinationIcon,
-                ),
-              },
-              onMapCreated: (mapController) {
-                _controller.complete(mapController);
-              },
+              ],
             ),
     );
   }

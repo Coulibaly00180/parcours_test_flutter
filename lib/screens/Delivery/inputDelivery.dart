@@ -320,6 +320,8 @@ class _InputDeliveryState extends State<InputDelivery> {
                         builder: (context) => OrderTrackingPage(
                           coordinates:
                               coordinates, // Passez les coordonnées à la nouvelle page
+                          distance: _calculatedDistance,
+                          tempsParcours: _scooterTravelTime,
                         ),
                       ),
                     );
