@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+import 'delivery_confirmation.dart';
 
 class OrderTrackingPage extends StatefulWidget {
   final Map<String, LatLng> coordinates;
@@ -21,6 +22,55 @@ class OrderTrackingPage extends StatefulWidget {
 }
 
 class _OrderTrackingPageState extends State<OrderTrackingPage> {
+  int seconds = 0, minutes = 0, hours = 0;
+  String digitSeconds = "00", digitMinutes = "00", digitHours = "00";
+  Timer? timer;
+  bool started = false;
+  List laps = [];
+
+  // Fonction stop
+  void stop() {
+    timer!.cancel();
+    setState(() {
+      started = false;
+    });
+  }
+
+  void addLaps() {
+    String lap = "$digitHours:$digitMinutes:$digitSeconds";
+    setState(() {
+      laps.add(lap);
+    });
+  }
+
+  // Fonction start
+  void start() {
+    started = true;
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      int localSeconds = seconds + 1;
+      int localMinutes = minutes;
+      int localHours = hours;
+
+      if (localSeconds > 59) {
+        if (localMinutes > 59) {
+          localHours++;
+          localMinutes = 0;
+        } else {
+          localMinutes++;
+          localSeconds = 0;
+        }
+      }
+      setState(() {
+        seconds = localSeconds;
+        minutes = localMinutes;
+        hours = localHours;
+        digitSeconds = (seconds >= 10) ? "$seconds" : "0$seconds";
+        digitHours = (hours >= 10) ? "$hours" : "0$hours";
+        digitMinutes = (minutes >= 10) ? "$minutes" : "0$minutes";
+      });
+    });
+  }
+
   late LatLng startLocation;
   late LatLng deliveryLocation;
 
@@ -90,6 +140,22 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     }
   }
 
+  // Page Confirmation
+  void navigateToConfirmationPage() {
+    stop(); // Arrêter le chronomètre avant de naviguer
+    String message = "Livraison bien effectuée!";
+    String timeElapsed = "$digitHours:$digitMinutes:$digitSeconds";
+    String distanceCovered =
+        "X km"; // Remplacez X par la distance réelle parcourue
+    Navigator.of(context).pushReplacement(MaterialPageRoute(
+      builder: (context) => DeliveryConfirmationPage(
+        message: message,
+        timeElapsed: timeElapsed,
+        distanceCovered: distanceCovered,
+      ),
+    ));
+  }
+
   void setCustomMarkerIcon() {
     BitmapDescriptor.fromAssetImage(
             ImageConfiguration.empty, "assets/Pin_source.png")
@@ -120,6 +186,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     deliveryLocation = widget.coordinates['delivery1']!;
     getCurrentLocation();
     getPolyPoints(startLocation, deliveryLocation);
+    start();
     super.initState();
   }
 
@@ -199,11 +266,18 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                                 "Distance restant à parcourir : km",
                                 style: TextStyle(fontSize: 16),
                               ),
-                              Text(
-                                "Temps restant avant l'arrivé : ",
-                                style: TextStyle(fontSize: 16),
+                              Row(
+                                children: [
+                                  Text(
+                                    "Chrnomètre",
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  Text(
+                                    "$digitHours:$digitMinutes:$digitSeconds",
+                                    style: TextStyle(fontSize: 16),
+                                  )
+                                ],
                               ),
-                              // Ajoutez ici un widget pour le chronomètre si nécessaire
                             ],
                           ),
                         ),
@@ -213,6 +287,14 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                 ),
               ],
             ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: navigateToConfirmationPage,
+        backgroundColor:
+            Colors.blue.withOpacity(0.5), // Couleur bleue transparente
+        icon: Icon(Icons.check), // Icône de vérification
+        label: Text("Valider Arrivée"), // Texte du bouton
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
